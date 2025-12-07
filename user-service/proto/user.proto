@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package user;
-
+option go_package = "github.com/scmbr/oms/user-service/internal/pb;userpb";
 service UserService {
     rpc Register(RegisterRequest) returns (AuthResponse);
     rpc Login(LoginRequest) returns (AuthResponse);
