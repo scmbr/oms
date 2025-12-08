@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/scmbr/oms/user-service/internal/dto"
 	"github.com/scmbr/oms/user-service/internal/models"
 	"github.com/scmbr/oms/user-service/internal/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -31,7 +32,7 @@ func NewUserService(repos *repository.Repositories, tokenTTL, refreshTTL time.Du
 	}
 }
 
-func (s *UserService) Register(ctx context.Context, email, password string) (*UserDTO, error) {
+func (s *UserService) Register(ctx context.Context, email, password string) (*dto.UserDTO, error) {
 	existing, _ := s.repos.User.GetByEmail(ctx, email)
 	if existing != nil {
 		return nil, ErrUserExists
@@ -61,11 +62,10 @@ func (s *UserService) Register(ctx context.Context, email, password string) (*Us
 	if err := s.repos.RefreshToken.Create(ctx, refresh); err != nil {
 		return nil, err
 	}
-
-	return toUserDTO(user.ID.String(), user.Email, user.Role, refresh.Token, refresh.ExpiresAt), nil
+	return dto.ToUserDTO(user, refresh.Token, refresh.ExpiresAt), nil
 }
 
-func (s *UserService) Login(ctx context.Context, email, password string) (*UserDTO, error) {
+func (s *UserService) Login(ctx context.Context, email, password string) (*dto.UserDTO, error) {
 	user, err := s.repos.User.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, err
@@ -88,10 +88,10 @@ func (s *UserService) Login(ctx context.Context, email, password string) (*UserD
 		return nil, err
 	}
 
-	return toUserDTO(user.ID.String(), user.Email, user.Role, refresh.Token, refresh.ExpiresAt), nil
+	return dto.ToUserDTO(user, refresh.Token, refresh.ExpiresAt), nil
 }
 
-func (s *UserService) ValidateRefreshToken(ctx context.Context, tokenStr string) (*UserDTO, error) {
+func (s *UserService) ValidateRefreshToken(ctx context.Context, tokenStr string) (*dto.UserDTO, error) {
 	token, err := s.repos.RefreshToken.GetByToken(ctx, tokenStr)
 	if err != nil || token == nil {
 		return nil, ErrUserNotFound
@@ -106,5 +106,5 @@ func (s *UserService) ValidateRefreshToken(ctx context.Context, tokenStr string)
 		return nil, ErrUserNotFound
 	}
 
-	return toUserDTO(user.ID.String(), user.Email, user.Role, token.Token, token.ExpiresAt), nil
+	return dto.ToUserDTO(user, token.Token, token.ExpiresAt), nil
 }
