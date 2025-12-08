@@ -7,7 +7,7 @@ import (
 	"github.com/scmbr/oms/user-service/internal/dto"
 	pb "github.com/scmbr/oms/user-service/internal/pb"
 	"github.com/scmbr/oms/user-service/internal/service"
-	"github.com/scmbr/oms/user-service/internal/validation"
+	"github.com/scmbr/oms/user-service/pkg/validation"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
