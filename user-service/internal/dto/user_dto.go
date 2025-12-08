@@ -1,6 +1,10 @@
-package service
+package dto
 
-import "time"
+import (
+	"time"
+
+	"github.com/scmbr/oms/user-service/internal/models"
+)
 
 type UserDTO struct {
 	UserID           string    `json:"user_id"`
@@ -10,11 +14,11 @@ type UserDTO struct {
 	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 }
 
-func toUserDTO(userID, email, role, refreshToken string, refreshExpiresAt time.Time) *UserDTO {
+func ToUserDTO(user *models.User, refreshToken string, refreshExpiresAt time.Time) *UserDTO {
 	return &UserDTO{
-		UserID:           userID,
-		Email:            email,
-		Role:             role,
+		UserID:           user.ID.String(),
+		Email:            user.Email,
+		Role:             user.Role,
 		RefreshToken:     refreshToken,
 		RefreshExpiresAt: refreshExpiresAt,
 	}
