@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/scmbr/oms/common/hasher"
 	"github.com/scmbr/oms/user-service/internal/dto"
 	"github.com/scmbr/oms/user-service/internal/models"
 	"github.com/scmbr/oms/user-service/internal/repository"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -21,14 +21,21 @@ var (
 type UserService struct {
 	users         repository.UserRepo
 	refreshTokens repository.RefreshTokenRepo
+	hasher        hasher.PasswordHasher
 	tokenTTL      time.Duration
 	refreshTTL    time.Duration
 }
 
-func NewUserService(r *repository.Repositories, tokenTTL, refreshTTL time.Duration) *UserService {
+func NewUserService(
+	r *repository.Repositories,
+	h hasher.PasswordHasher,
+	tokenTTL,
+	refreshTTL time.Duration,
+) *UserService {
 	return &UserService{
 		users:         r.User,
 		refreshTokens: r.RefreshToken,
+		hasher:        h,
 		tokenTTL:      tokenTTL,
 		refreshTTL:    refreshTTL,
 	}
@@ -40,7 +47,7 @@ func (s *UserService) Register(ctx context.Context, email, password string) (*dt
 		return nil, ErrUserExists
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := s.hasher.Hash(password)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +83,7 @@ func (s *UserService) Login(ctx context.Context, email, password string) (*dto.U
 		return nil, ErrUserNotFound
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+	if !s.hasher.Compare(user.PasswordHash, password) {
 		return nil, ErrInvalidPassword
 	}
 
