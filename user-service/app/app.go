@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/scmbr/oms/common/config"
+	"github.com/scmbr/oms/common/hasher"
 	pb "github.com/scmbr/oms/user-service/internal/pb"
 	"github.com/scmbr/oms/user-service/internal/repository"
 	"github.com/scmbr/oms/user-service/internal/service"
@@ -26,8 +27,8 @@ func Run() error {
 	}
 
 	repos := repository.NewRepositories(db)
-
-	userSvc := service.NewUserService(repos, 15*time.Minute, 24*time.Hour)
+	hasher := hasher.BcryptHasher{}
+	userSvc := service.NewUserService(repos, hasher, 15*time.Minute, 24*time.Hour)
 
 	handler := grpc_handler.NewUserHandler(userSvc)
 
