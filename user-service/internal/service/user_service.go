@@ -19,21 +19,23 @@ var (
 )
 
 type UserService struct {
-	repos      *repository.Repositories
-	tokenTTL   time.Duration
-	refreshTTL time.Duration
+	users         repository.UserRepo
+	refreshTokens repository.RefreshTokenRepo
+	tokenTTL      time.Duration
+	refreshTTL    time.Duration
 }
 
-func NewUserService(repos *repository.Repositories, tokenTTL, refreshTTL time.Duration) *UserService {
+func NewUserService(r *repository.Repositories, tokenTTL, refreshTTL time.Duration) *UserService {
 	return &UserService{
-		repos:      repos,
-		tokenTTL:   tokenTTL,
-		refreshTTL: refreshTTL,
+		users:         r.User,
+		refreshTokens: r.RefreshToken,
+		tokenTTL:      tokenTTL,
+		refreshTTL:    refreshTTL,
 	}
 }
 
 func (s *UserService) Register(ctx context.Context, email, password string) (*dto.UserDTO, error) {
-	existing, _ := s.repos.User.GetByEmail(ctx, email)
+	existing, _ := s.users.GetByEmail(ctx, email)
 	if existing != nil {
 		return nil, ErrUserExists
 	}
@@ -49,7 +51,7 @@ func (s *UserService) Register(ctx context.Context, email, password string) (*dt
 		PasswordHash: string(hash),
 		Role:         "user",
 	}
-	if err := s.repos.User.Create(ctx, user); err != nil {
+	if err := s.users.Create(ctx, user); err != nil {
 		return nil, err
 	}
 
@@ -59,14 +61,14 @@ func (s *UserService) Register(ctx context.Context, email, password string) (*dt
 		Token:     uuid.NewString(),
 		ExpiresAt: time.Now().Add(s.refreshTTL),
 	}
-	if err := s.repos.RefreshToken.Create(ctx, refresh); err != nil {
+	if err := s.refreshTokens.Create(ctx, refresh); err != nil {
 		return nil, err
 	}
 	return dto.ToUserDTO(user, refresh.Token, refresh.ExpiresAt), nil
 }
 
 func (s *UserService) Login(ctx context.Context, email, password string) (*dto.UserDTO, error) {
-	user, err := s.repos.User.GetByEmail(ctx, email)
+	user, err := s.users.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +86,7 @@ func (s *UserService) Login(ctx context.Context, email, password string) (*dto.U
 		Token:     uuid.NewString(),
 		ExpiresAt: time.Now().Add(s.refreshTTL),
 	}
-	if err := s.repos.RefreshToken.Create(ctx, refresh); err != nil {
+	if err := s.refreshTokens.Create(ctx, refresh); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +94,7 @@ func (s *UserService) Login(ctx context.Context, email, password string) (*dto.U
 }
 
 func (s *UserService) ValidateRefreshToken(ctx context.Context, tokenStr string) (*dto.UserDTO, error) {
-	token, err := s.repos.RefreshToken.GetByToken(ctx, tokenStr)
+	token, err := s.refreshTokens.GetByToken(ctx, tokenStr)
 	if err != nil || token == nil {
 		return nil, ErrUserNotFound
 	}
@@ -101,7 +103,7 @@ func (s *UserService) ValidateRefreshToken(ctx context.Context, tokenStr string)
 		return nil, errors.New("refresh token expired")
 	}
 
-	user, err := s.repos.User.GetByID(ctx, token.UserID)
+	user, err := s.users.GetByID(ctx, token.UserID)
 	if err != nil || user == nil {
 		return nil, ErrUserNotFound
 	}
