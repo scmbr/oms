@@ -14,11 +14,11 @@ import (
 
 type UserHandler struct {
 	pb.UnimplementedUserServiceServer
-	userService *service.UserService
+	userService service.Users
 }
 
-func NewUserHandler(userService *service.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+func NewUserHandler(service *service.Services) *UserHandler {
+	return &UserHandler{userService: service.User}
 }
 func (h *UserHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.AuthResponse, error) {
 	input := dto.RegisterRequest{

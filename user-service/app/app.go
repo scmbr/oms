@@ -28,7 +28,7 @@ func Run() error {
 
 	repos := repository.NewRepositories(db)
 	hasher := hasher.BcryptHasher{}
-	userSvc := service.NewUserService(repos, hasher, 15*time.Minute, 24*time.Hour)
+	userSvc := service.NewServices(repos, hasher, 15*time.Minute, 24*time.Hour)
 
 	handler := grpc_handler.NewUserHandler(userSvc)
 
