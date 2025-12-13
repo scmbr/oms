@@ -18,7 +18,7 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-func (r *OrderRepository) CreateOrder(ctx context.Context, userID string, items []models.OrderItem) (*models.Order, error) {
+func (r *OrderRepository) Create(ctx context.Context, userID string, items []models.OrderItem) (*models.Order, error) {
 	var total float64
 	for _, item := range items {
 		total += item.Price * float64(item.Quantity)
