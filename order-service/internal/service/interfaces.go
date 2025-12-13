@@ -17,8 +17,8 @@ type Services struct {
 	Order Orders
 }
 
-func NewServicesitories(repo repository.OrderRepo) *Services {
+func NewServices(repo *repository.Repositories) *Services {
 	return &Services{
-		Order: NewOrderService(repo),
+		Order: NewOrderService(repo.Order),
 	}
 }
