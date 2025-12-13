@@ -1,8 +1,8 @@
-name: CI
+name: CI - user-service
 
 on:
   push:
-    branches: [master]
+    branches: [master]   
   pull_request:
     branches: [master]
 
@@ -21,22 +21,23 @@ jobs:
         with:
           go-version: 1.21
 
-
+ 
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/user-service/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
-
+   
       - name: Install dependencies
+        working-directory: ./user-service
         run: go mod tidy
 
 
-      - name: Run user-service tests
+      - name: Run tests
         working-directory: ./user-service
         run: go test ./... -v
