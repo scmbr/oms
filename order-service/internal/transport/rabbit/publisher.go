@@ -17,9 +17,14 @@ func NewPublisher(conn *Connection, queue string) *Publisher {
 		queue: queue,
 	}
 }
-
 func (p *Publisher) Publish(payload []byte, messageID string) error {
-	return p.conn.Channel.Publish(
+	ch, err := p.conn.Channel()
+	if err != nil {
+		return err
+	}
+	defer ch.Close()
+
+	return ch.Publish(
 		"",
 		p.queue,
 		false,

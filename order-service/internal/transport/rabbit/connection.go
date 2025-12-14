@@ -5,8 +5,7 @@ import (
 )
 
 type Connection struct {
-	Conn    *amqp.Connection
-	Channel *amqp.Channel
+	Conn *amqp.Connection
 }
 
 func NewConnection(cfg Config) (*Connection, error) {
@@ -29,22 +28,20 @@ func NewConnection(cfg Config) (*Connection, error) {
 		false,
 		nil,
 	)
+	ch.Close()
 	if err != nil {
-		ch.Close()
 		conn.Close()
 		return nil, err
 	}
 
-	return &Connection{
-		Conn:    conn,
-		Channel: ch,
-	}, nil
+	return &Connection{Conn: conn}, nil
+}
+
+func (c *Connection) Channel() (*amqp.Channel, error) {
+	return c.Conn.Channel()
 }
 
 func (c *Connection) Close() {
-	if c.Channel != nil {
-		c.Channel.Close()
-	}
 	if c.Conn != nil {
 		c.Conn.Close()
 	}
