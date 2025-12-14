@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/scmbr/oms/common/tx"
 	"github.com/scmbr/oms/order-service/internal/dto"
@@ -10,6 +11,14 @@ import (
 	"github.com/scmbr/oms/order-service/internal/repository"
 	"gorm.io/gorm"
 )
+
+var validTransitions = map[models.OrderStatus][]models.OrderStatus{
+	models.StatusCreated:   {models.StatusReserved, models.StatusFailed, models.StatusCancelled},
+	models.StatusReserved:  {models.StatusPaid, models.StatusFailed, models.StatusCancelled},
+	models.StatusPaid:      {},
+	models.StatusCancelled: {},
+	models.StatusFailed:    {},
+}
 
 type OrderService struct {
 	orderRepo  repository.OrderRepo
@@ -71,10 +80,10 @@ func (s *OrderService) ListOrders(ctx context.Context, userID string) ([]dto.Ord
 }
 func marshalPayload(order *models.Order) []byte {
 	payload, err := json.Marshal(struct {
-		OrderID    string  `json:"order_id"`
-		UserID     string  `json:"user_id"`
-		Status     string  `json:"status"`
-		TotalPrice float64 `json:"total_price"`
+		OrderID    string             `json:"order_id"`
+		UserID     string             `json:"user_id"`
+		Status     models.OrderStatus `json:"status"`
+		TotalPrice float64            `json:"total_price"`
 	}{
 		OrderID:    order.OrderID,
 		UserID:     order.UserID,
@@ -86,4 +95,71 @@ func marshalPayload(order *models.Order) []byte {
 		return nil
 	}
 	return payload
+}
+func (s *OrderService) UpdateStatus(ctx context.Context, orderID string, newStatus models.OrderStatus, eventID string) error {
+	return s.txManager.WithTx(ctx, func(tx *gorm.DB) error {
+		order, err := s.orderRepo.GetOrder(ctx, orderID)
+		if err != nil {
+			return err
+		}
+
+		var exists bool
+		if err := tx.Model(&models.OutboxEvent{}).Select("1").
+			Where("event_id = ?", eventID).
+			Limit(1).Scan(&exists).Error; err != nil {
+			return err
+		}
+		if exists {
+			return nil
+		}
+
+		validNext, ok := validTransitions[order.Status]
+		if !ok {
+			return fmt.Errorf("текущий статус %s неизвестен", order.Status)
+		}
+
+		allowed := false
+		for _, st := range validNext {
+			if st == newStatus {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return fmt.Errorf("невозможный переход %s -> %s", order.Status, newStatus)
+		}
+
+		order.Status = newStatus
+		if err := tx.Save(order).Error; err != nil {
+			return err
+		}
+
+		outbox := &models.OutboxEvent{
+			ExternalID: eventID,
+			EventType:  "order.status_changed",
+			OrderID:    orderID,
+			Payload:    marshalPayload(order),
+		}
+		if err := s.outboxRepo.Create(ctx, tx, outbox); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+func (s *OrderService) ParseStatus(str string) (models.OrderStatus, error) {
+	switch str {
+	case string(models.StatusCreated):
+		return models.StatusCreated, nil
+	case string(models.StatusReserved):
+		return models.StatusReserved, nil
+	case string(models.StatusPaid):
+		return models.StatusPaid, nil
+	case string(models.StatusCancelled):
+		return models.StatusCancelled, nil
+	case string(models.StatusFailed):
+		return models.StatusFailed, nil
+	default:
+		return "", fmt.Errorf("unknown order status: %s", s)
+	}
 }

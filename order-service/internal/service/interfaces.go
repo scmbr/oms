@@ -13,6 +13,8 @@ type Order interface {
 	CreateOrder(ctx context.Context, userID string, items []models.OrderItem) (*dto.OrderDTO, error)
 	GetOrder(ctx context.Context, orderID string) (*dto.OrderDTO, error)
 	ListOrders(ctx context.Context, userID string) ([]dto.OrderDTO, error)
+	UpdateStatus(ctx context.Context, orderID string, newStatus models.OrderStatus, eventID string) error
+	ParseStatus(s string) (models.OrderStatus, error)
 }
 
 type Outbox interface {
