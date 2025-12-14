@@ -54,7 +54,11 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-
+	consumer, err := rabbit.NewConsumer(conn, rabbitCfg.Queue, orderSvc.Order)
+	if err != nil {
+		return err
+	}
+	go consumer.Start(ctx)
 	grpcServer := grpc.NewServer()
 	pb.RegisterOrderServiceServer(grpcServer, handler)
 
