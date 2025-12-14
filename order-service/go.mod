@@ -7,6 +7,7 @@ toolchain go1.24.11
 require (
 	github.com/google/uuid v1.6.0
 	github.com/scmbr/oms/common v0.0.0
+	github.com/streadway/amqp v1.1.0
 	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1
