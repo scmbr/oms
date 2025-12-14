@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,7 +19,7 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-func (r *OrderRepository) Create(ctx context.Context, userID string, items []models.OrderItem) (*models.Order, error) {
+func (r *OrderRepository) Create(ctx context.Context, tx *gorm.DB, userID string, items []models.OrderItem) (*models.Order, error) {
 	var total float64
 	for _, item := range items {
 		total += item.Price * float64(item.Quantity)
@@ -30,13 +31,22 @@ func (r *OrderRepository) Create(ctx context.Context, userID string, items []mod
 		Status:     "CREATED",
 		TotalPrice: total,
 		Items:      items,
+		CreatedAt:  time.Now(),
+	}
+
+	if err := tx.Create(order).Error; err != nil {
+		return nil, err
 	}
 
 	eventPayload, _ := json.Marshal(struct {
 		OrderID string `json:"order_id"`
 		UserID  string `json:"user_id"`
 		Status  string `json:"status"`
-	}{OrderID: order.OrderID, UserID: userID, Status: order.Status})
+	}{
+		OrderID: order.OrderID,
+		UserID:  userID,
+		Status:  order.Status,
+	})
 
 	outbox := &models.OutboxEvent{
 		EventType: "order.created",
@@ -44,16 +54,7 @@ func (r *OrderRepository) Create(ctx context.Context, userID string, items []mod
 		Payload:   eventPayload,
 	}
 
-	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(order).Error; err != nil {
-			return err
-		}
-		if err := tx.Create(&outbox).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
+	if err := tx.Create(outbox).Error; err != nil {
 		return nil, err
 	}
 
