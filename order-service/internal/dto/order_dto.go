@@ -16,7 +16,7 @@ type OrderItemDTO struct {
 type OrderDTO struct {
 	OrderID    string
 	UserID     string
-	Status     string
+	Status     models.OrderStatus
 	TotalPrice float64
 	Items      []OrderItemDTO
 	CreatedAt  string
