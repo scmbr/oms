@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/scmbr/oms/common/tx"
 	"github.com/scmbr/oms/order-service/internal/service"
 	"github.com/scmbr/oms/order-service/internal/transport/rabbit"
 )
@@ -14,13 +15,15 @@ type OutboxWorker struct {
 	outboxService service.Outbox
 	publisher     *rabbit.Publisher
 	interval      time.Duration
+	txManager     tx.TxManager
 }
 
-func NewOutboxWorker(outboxService service.Outbox, publisher *rabbit.Publisher, interval time.Duration) *OutboxWorker {
+func NewOutboxWorker(outboxService service.Outbox, publisher *rabbit.Publisher, interval time.Duration, txManager tx.TxManager) *OutboxWorker {
 	return &OutboxWorker{
 		outboxService: outboxService,
 		publisher:     publisher,
 		interval:      interval,
+		txManager:     txManager,
 	}
 }
 
@@ -52,7 +55,7 @@ func (w *OutboxWorker) processPendingEvents(ctx context.Context) {
 			continue
 		}
 
-		if err := w.outboxService.MarkAsProcessed(ctx, nil, strconv.FormatUint(uint64(event.ID), 10)); err != nil {
+		if err := w.outboxService.MarkAsProcessed(ctx, w.txManager, strconv.FormatUint(uint64(event.ID), 10)); err != nil {
 			log.Println("Failed to mark event as processed", event.ID, err)
 		}
 	}

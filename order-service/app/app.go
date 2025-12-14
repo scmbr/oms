@@ -45,7 +45,8 @@ func Run() error {
 	txManager := tx.NewTxManager(db)
 	orderSvc := service.NewServices(repos, txManager)
 
-	outboxWorker := worker.NewOutboxWorker(orderSvc.Outbox, publisher, 5*time.Second)
+	outboxWorker := worker.NewOutboxWorker(orderSvc.Outbox, publisher, 5*time.Second, txManager)
+
 	go outboxWorker.Start(ctx)
 	handler := grpc_handler.NewOrderHandler(orderSvc.Order)
 
