@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,13 +19,17 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 }
 
 func (r *OrderRepository) Create(ctx context.Context, tx *gorm.DB, userID string, items []models.OrderItem) (*models.Order, error) {
+	orderID := uuid.New().String()
+
 	var total float64
-	for _, item := range items {
-		total += item.Price * float64(item.Quantity)
+	for i := range items {
+		items[i].ItemID = uuid.New().String()
+		items[i].OrderID = orderID
+		total += items[i].Price * float64(items[i].Quantity)
 	}
 
 	order := &models.Order{
-		OrderID:    uuid.New().String(),
+		OrderID:    orderID,
 		UserID:     userID,
 		Status:     "CREATED",
 		TotalPrice: total,
@@ -35,26 +38,6 @@ func (r *OrderRepository) Create(ctx context.Context, tx *gorm.DB, userID string
 	}
 
 	if err := tx.Create(order).Error; err != nil {
-		return nil, err
-	}
-
-	eventPayload, _ := json.Marshal(struct {
-		OrderID string `json:"order_id"`
-		UserID  string `json:"user_id"`
-		Status  string `json:"status"`
-	}{
-		OrderID: order.OrderID,
-		UserID:  userID,
-		Status:  order.Status,
-	})
-
-	outbox := &models.OutboxEvent{
-		EventType: "order.created",
-		OrderID:   order.OrderID,
-		Payload:   eventPayload,
-	}
-
-	if err := tx.Create(outbox).Error; err != nil {
 		return nil, err
 	}
 
