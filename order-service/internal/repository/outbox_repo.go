@@ -33,5 +33,8 @@ func (r *OutboxRepository) MarkAsSent(ctx context.Context, tx *gorm.DB, eventID 
 	return tx.WithContext(ctx).
 		Model(&models.OutboxEvent{}).
 		Where("id = ?", eventID).
-		Update("processed_at", gorm.Expr("NOW()")).Error
+		Updates(map[string]interface{}{
+			"status":       "processed",
+			"processed_at": gorm.Expr("NOW()"),
+		}).Error
 }
