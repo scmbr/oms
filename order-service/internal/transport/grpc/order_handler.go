@@ -92,7 +92,7 @@ func dtoToProto(o *dto.OrderDTO) *pb.Order {
 	return &pb.Order{
 		OrderId:    o.OrderID,
 		UserId:     o.UserID,
-		Status:     o.Status,
+		Status:     string(o.Status),
 		TotalPrice: o.TotalPrice,
 		Items:      protoItems,
 		CreatedAt:  o.CreatedAt,
