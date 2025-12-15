@@ -1,27 +1,27 @@
-name: CI - user-service
+name: CI - OMS Services
 
 on:
   push:
-    branches: [master]   
+    branches: [master]
   pull_request:
     branches: [master]
 
 jobs:
   user-service-tests:
     runs-on: ubuntu-latest
-
+    services:
+      docker:
+        image: docker:24
+        options: --privileged
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v3
-
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.21
 
- 
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
@@ -32,12 +32,43 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-   
       - name: Install dependencies
         working-directory: ./user-service
         run: go mod tidy
 
-
       - name: Run tests
         working-directory: ./user-service
-        run: go test ./... -v
+        run: go test ./... -v -count=1
+
+  order-service-tests:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:24
+        options: --privileged
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/order-service/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        working-directory: ./order-service
+        run: go mod tidy
+
+      - name: Run tests
+        working-directory: ./order-service
+        run: go test ./... -v -count=1
