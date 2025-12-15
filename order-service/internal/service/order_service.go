@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/scmbr/oms/common/tx"
 	"github.com/scmbr/oms/order-service/internal/dto"
 	"github.com/scmbr/oms/order-service/internal/models"
@@ -40,9 +41,10 @@ func (s *OrderService) CreateOrder(ctx context.Context, userID string, items []m
 		}
 
 		outbox := &models.OutboxEvent{
-			EventType: "order.created",
-			OrderID:   o.OrderID,
-			Payload:   marshalPayload(o),
+			ExternalID: uuid.New().String(),
+			EventType:  "order.created",
+			OrderID:    o.OrderID,
+			Payload:    marshalPayload(o),
 		}
 
 		if err := s.outboxRepo.Create(ctx, tx, outbox); err != nil {
@@ -105,7 +107,7 @@ func (s *OrderService) UpdateStatus(ctx context.Context, orderID string, newStat
 
 		var exists bool
 		if err := tx.Model(&models.OutboxEvent{}).Select("1").
-			Where("event_id = ?", eventID).
+			Where("external_id = ?", eventID).
 			Limit(1).Scan(&exists).Error; err != nil {
 			return err
 		}
