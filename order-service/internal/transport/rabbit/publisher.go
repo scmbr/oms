@@ -7,17 +7,18 @@ import (
 )
 
 type Publisher struct {
-	conn  *Connection
-	queue string
+	conn     *Connection
+	exchange string
 }
 
-func NewPublisher(conn *Connection, queue string) *Publisher {
+func NewPublisher(conn *Connection, exchange string) *Publisher {
 	return &Publisher{
-		conn:  conn,
-		queue: queue,
+		conn:     conn,
+		exchange: exchange,
 	}
 }
-func (p *Publisher) Publish(payload []byte, messageID string) error {
+
+func (p *Publisher) Publish(routingKey string, payload []byte, messageID string) error {
 	ch, err := p.conn.Channel()
 	if err != nil {
 		return err
@@ -25,8 +26,8 @@ func (p *Publisher) Publish(payload []byte, messageID string) error {
 	defer ch.Close()
 
 	return ch.Publish(
-		"",
-		p.queue,
+		p.exchange,
+		routingKey,
 		false,
 		false,
 		amqp.Publishing{

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/scmbr/oms/common/config"
-	"github.com/scmbr/oms/common/tx"
 	pb "github.com/scmbr/oms/order-service/internal/pb"
 	"github.com/scmbr/oms/order-service/internal/repository"
 	"github.com/scmbr/oms/order-service/internal/service"
@@ -30,8 +29,9 @@ func Run() error {
 		return err
 	}
 	rabbitCfg := rabbit.Config{
-		URL:   cfg.RabbitMQURL,
-		Queue: "orders",
+		URL:      cfg.RabbitMQURL,
+		Exchange: "saga.events",
+		Queue:    "order-service",
 	}
 	conn, err := rabbit.NewConnection(rabbitCfg)
 	if err != nil {
@@ -39,13 +39,12 @@ func Run() error {
 	}
 	defer conn.Close()
 
-	publisher := rabbit.NewPublisher(conn, rabbitCfg.Queue)
+	publisher := rabbit.NewPublisher(conn, rabbitCfg.Exchange)
 
 	repos := repository.NewRepositories(db)
-	txManager := tx.NewTxManager(db)
-	orderSvc := service.NewServices(repos, txManager)
+	orderSvc := service.NewServices(repos)
 
-	outboxWorker := worker.NewOutboxWorker(orderSvc.Outbox, publisher, 5*time.Second, txManager)
+	outboxWorker := worker.NewOutboxWorker(orderSvc.Outbox, publisher, 5*time.Second)
 
 	go outboxWorker.Start(ctx)
 	handler := grpc_handler.NewOrderHandler(orderSvc.Order)
