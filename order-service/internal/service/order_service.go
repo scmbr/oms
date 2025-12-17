@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -79,7 +80,7 @@ func (s *OrderService) UpdateStatus(ctx context.Context, orderID string, newStat
 
 	if !isValid {
 		log.Printf("Invalid status transition: %s → %s", order.Status, newStatus)
-		return nil
+		return errors.New("invalid transition")
 	}
 
 	return s.orderRepo.UpdateStatus(ctx, orderID, newStatus, eventID)
