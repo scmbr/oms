@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	"github.com/scmbr/oms/order-service/internal/dto"
 	"github.com/scmbr/oms/order-service/internal/models"
 )
 
@@ -20,12 +23,16 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 
 func (r *OrderRepository) Create(ctx context.Context, userID string, items []dto.OrderItemDTO, total float64) (*models.Order, error) {
 	orderID := uuid.New().String()
-
-	var total float64
+	var orderItems []models.OrderItem
 	for i := range items {
-		items[i].ItemID = uuid.New().String()
-		items[i].OrderID = orderID
-		total += items[i].Price * float64(items[i].Quantity)
+		var orderItem models.OrderItem
+		orderItem.ItemID = uuid.New().String()
+		orderItem.OrderID = orderID
+		orderItem.Price = items[i].Price
+		orderItem.Quantity = int(items[i].Quantity)
+		orderItem.ProductID = items[i].ProductID
+
+		orderItems = append(orderItems, orderItem)
 	}
 
 	order := &models.Order{
@@ -33,11 +40,35 @@ func (r *OrderRepository) Create(ctx context.Context, userID string, items []dto
 		UserID:     userID,
 		Status:     "CREATED",
 		TotalPrice: total,
-		Items:      items,
+		Items:      orderItems,
 		CreatedAt:  time.Now(),
 	}
 
+	outbox := &models.OutboxEvent{
+		ExternalID: uuid.New().String(),
+		EventType:  "order.created",
+		OrderID:    order.OrderID,
+		Payload:    marshalPayload(order),
+		Status:     "pending",
+		CreatedAt:  time.Now(),
+	}
+
+	tx := r.db.WithContext(ctx).Begin()
+	if err := tx.Error; err != nil {
+		return nil, err
+	}
+
 	if err := tx.Create(order).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Create(outbox).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
 
