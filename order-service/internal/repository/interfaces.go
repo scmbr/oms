@@ -14,7 +14,6 @@ type OrderRepo interface {
 	UpdateStatus(ctx context.Context, orderID string, newStatus models.OrderStatus, eventID string) error
 }
 type OutboxRepo interface {
-	Create(ctx context.Context, tx *gorm.DB, event *models.OutboxEvent) error
 	GetPending(ctx context.Context) ([]models.OutboxEvent, error)
 	MarkAsSent(ctx context.Context, tx *gorm.DB, eventID string) error
 }

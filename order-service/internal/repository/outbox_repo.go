@@ -14,9 +14,6 @@ type OutboxRepository struct {
 func NewOutboxRepository(db *gorm.DB) *OutboxRepository {
 	return &OutboxRepository{db: db}
 }
-func (r *OutboxRepository) Create(ctx context.Context, tx *gorm.DB, event *models.OutboxEvent) error {
-	return tx.WithContext(ctx).Create(event).Error
-}
 
 func (r *OutboxRepository) GetPending(ctx context.Context) ([]models.OutboxEvent, error) {
 	var events []models.OutboxEvent
