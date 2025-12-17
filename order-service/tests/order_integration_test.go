@@ -11,7 +11,7 @@ import (
 
 	"github.com/docker/go-connections/nat"
 	"github.com/google/uuid"
-	"github.com/scmbr/oms/common/tx"
+	"github.com/scmbr/oms/order-service/internal/dto"
 	"github.com/scmbr/oms/order-service/internal/models"
 	"github.com/scmbr/oms/order-service/internal/repository"
 	"github.com/scmbr/oms/order-service/internal/service"
@@ -25,6 +25,7 @@ import (
 var (
 	orderSvc  *service.OrderService
 	outboxSvc *service.OutboxService
+	repos     *repository.Repositories
 	ctx       context.Context
 )
 
@@ -33,9 +34,8 @@ func TestMain(m *testing.M) {
 	db, cleanup := setupPostgresContainer()
 	defer cleanup()
 
-	repos := repository.NewRepositories(db)
-	txManager := tx.NewTxManager(db)
-	orderSvc = service.NewOrderService(repos, txManager)
+	repos = repository.NewRepositories(db)
+	orderSvc = service.NewOrderService(repos)
 	outboxSvc = service.NewOutboxService(repos)
 	os.Exit(m.Run())
 }
@@ -96,21 +96,32 @@ func setupPostgresContainer() (*gorm.DB, func()) {
 // Создание заказа
 func TestCreateOrder(t *testing.T) {
 	userID := uuid.New().String()
-	items := []models.OrderItem{
+	items := []dto.OrderItemDTO{
 		{ProductID: uuid.New().String(), Quantity: 2, Price: 10},
+		{ProductID: uuid.New().String(), Quantity: 7, Price: 80},
+		{ProductID: uuid.New().String(), Quantity: 10, Price: 100},
 	}
 
 	order, err := orderSvc.CreateOrder(ctx, userID, items)
 	assert.NoError(t, err)
-	assert.Equal(t, userID, order.UserID)
+	res, err := repos.Order.GetOrder(ctx, order.OrderID)
+	assert.NoError(t, err)
+	outbox, err := repos.Outbox.GetPending(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, res.UserID, order.UserID)
 	assert.Equal(t, len(items), len(order.Items))
+	assert.Equal(t, outbox[0].OrderID, order.OrderID)
+	assert.Equal(t, (*time.Time)(nil), outbox[0].ProcessedAt)
+	assert.Len(t, outbox, 1)
+	assert.Equal(t, 1580.0, order.TotalPrice)
+	assert.Equal(t, "pending", outbox[0].Status)
 	assert.Equal(t, models.StatusCreated, order.Status)
 }
 
 // Получение заказа
 func TestGetOrder(t *testing.T) {
 	userID := uuid.New().String()
-	items := []models.OrderItem{
+	items := []dto.OrderItemDTO{
 		{ProductID: uuid.New().String(), Quantity: 1, Price: 5},
 	}
 
@@ -124,8 +135,17 @@ func TestGetOrder(t *testing.T) {
 func TestListOrders(t *testing.T) {
 	userID := uuid.New().String()
 	// Создаем 2 заказа
-	_, _ = orderSvc.CreateOrder(ctx, userID, []models.OrderItem{{ProductID: uuid.New().String(), Quantity: 1, Price: 5}})
-	_, _ = orderSvc.CreateOrder(ctx, userID, []models.OrderItem{{ProductID: uuid.New().String(), Quantity: 2, Price: 10}})
+	items1 := []dto.OrderItemDTO{
+		{ProductID: uuid.New().String(), Quantity: 13, Price: 170},
+		{ProductID: uuid.New().String(), Quantity: 1, Price: 800},
+		{ProductID: uuid.New().String(), Quantity: 4, Price: 500},
+	}
+	items2 := []dto.OrderItemDTO{
+		{ProductID: uuid.New().String(), Quantity: 3, Price: 160},
+		{ProductID: uuid.New().String(), Quantity: 10, Price: 100},
+	}
+	_, _ = orderSvc.CreateOrder(ctx, userID, items1)
+	_, _ = orderSvc.CreateOrder(ctx, userID, items2)
 
 	list, err := orderSvc.ListOrders(ctx, userID)
 	assert.NoError(t, err)
@@ -135,7 +155,7 @@ func TestListOrders(t *testing.T) {
 // Обновление статуса заказа
 func TestUpdateStatus_ValidTransition(t *testing.T) {
 	userID := uuid.New().String()
-	items := []models.OrderItem{{ProductID: uuid.New().String(), Quantity: 1, Price: 5}}
+	items := []dto.OrderItemDTO{{ProductID: uuid.New().String(), Quantity: 1, Price: 5}}
 	order, _ := orderSvc.CreateOrder(ctx, userID, items)
 
 	err := orderSvc.UpdateStatus(ctx, order.OrderID, models.StatusReserved, uuid.New().String())
@@ -148,7 +168,7 @@ func TestUpdateStatus_ValidTransition(t *testing.T) {
 // Невалидная транзакция (нельзя напрямую в PAID из CREATED)
 func TestUpdateStatus_InvalidTransition(t *testing.T) {
 	userID := uuid.New().String()
-	items := []models.OrderItem{{ProductID: uuid.New().String(), Quantity: 1, Price: 5}}
+	items := []dto.OrderItemDTO{{ProductID: uuid.New().String(), Quantity: 1, Price: 5}}
 	order, _ := orderSvc.CreateOrder(ctx, userID, items)
 
 	err := orderSvc.UpdateStatus(ctx, order.OrderID, models.StatusPaid, uuid.New().String())
