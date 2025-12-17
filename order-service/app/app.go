@@ -2,11 +2,11 @@ package app
 
 import (
 	"context"
-	"log"
 	"net"
 	"time"
 
 	"github.com/scmbr/oms/common/config"
+	"github.com/scmbr/oms/common/logger"
 	pb "github.com/scmbr/oms/order-service/internal/pb"
 	"github.com/scmbr/oms/order-service/internal/repository"
 	"github.com/scmbr/oms/order-service/internal/service"
@@ -23,7 +23,7 @@ func Run() error {
 	defer cancel()
 
 	cfg := config.Load()
-
+	logger.Init("order-service")
 	db, err := gorm.Open(postgres.Open(cfg.PostgresDSN), &gorm.Config{})
 	if err != nil {
 		return err
@@ -61,6 +61,10 @@ func Run() error {
 	grpcServer := grpc.NewServer()
 	pb.RegisterOrderServiceServer(grpcServer, handler)
 
-	log.Printf("OrderService gRPC running on :%s", cfg.Port)
+	logger.Info("OrderService gRPC server started", map[string]interface{}{
+		"port":     cfg.Port,
+		"protocol": "gRPC",
+		"service":  "order-service",
+	})
 	return grpcServer.Serve(lis)
 }
