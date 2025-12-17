@@ -547,7 +547,7 @@ const file_order_proto_rawDesc = "" +
 	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12;\n" +
 	"\bGetOrder\x12\x16.order.GetOrderRequest\x1a\x17.order.GetOrderResponse\x12A\n" +
 	"\n" +
-	"ListOrders\x12\x18.order.ListOrdersRequest\x1a\x19.order.ListOrdersResponseB8Z6github.com/your/repo/order-service/internal/pb;orderpbb\x06proto3"
+	"ListOrders\x12\x18.order.ListOrdersRequest\x1a\x19.order.ListOrdersResponseB8Z6github.com/scmbr/oms/order-service/internal/pb;orderpbb\x06proto3"
 
 var (
 	file_order_proto_rawDescOnce sync.Once

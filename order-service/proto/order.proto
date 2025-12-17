@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package order;
-option go_package = "github.com/your/repo/order-service/internal/pb;orderpb";
+option go_package = "github.com/scmbr/oms/order-service/internal/pb;orderpb";
 
 service OrderService {
     rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
