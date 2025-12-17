@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package inventory;
+
+option go_package = "github.com/scmbr/oms/inventory-service/internal/pb;inventorypb";
+
+service InventoryService {
+    rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+}
+
+message GetProductsRequest{
+    repeated string product_id=1;
+}
+message GetProductsResponse{
+    repeated Product products = 1;
+}
+
+message Product{
+    string product_id =1;
+    double price=2;
+}
