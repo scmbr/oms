@@ -13,18 +13,32 @@ func Init(serviceName string) {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).
 		With().Str("service", serviceName).Logger()
 }
-func Info(msg string, fields map[string]interface{}) {
+
+func Info(msg string, fields ...map[string]interface{}) {
 	event := log.Info()
-	for k, v := range fields {
-		event = event.Interface(k, v)
+	if len(fields) > 0 && fields[0] != nil {
+		for k, v := range fields[0] {
+			event = event.Interface(k, v)
+		}
 	}
 	event.Msg(msg)
 }
 
-func Error(msg string, err error, fields map[string]interface{}) {
-	event := log.Error().Err(err)
-	for k, v := range fields {
-		event = event.Interface(k, v)
+func Error(msg string, err error, fields ...map[string]interface{}) {
+	event := log.Error().Err(err).Caller(1)
+	if len(fields) > 0 && fields[0] != nil {
+		for k, v := range fields[0] {
+			event = event.Interface(k, v)
+		}
+	}
+	event.Msg(msg)
+}
+func Debug(msg string, fields ...map[string]interface{}) {
+	event := log.Debug()
+	if len(fields) > 0 && fields[0] != nil {
+		for k, v := range fields[0] {
+			event = event.Interface(k, v)
+		}
 	}
 	event.Msg(msg)
 }
