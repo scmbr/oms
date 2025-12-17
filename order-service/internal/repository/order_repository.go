@@ -59,3 +59,30 @@ func (r *OrderRepository) ListOrders(ctx context.Context, userID string) ([]mode
 	}
 	return orders, nil
 }
+
+func (r *OrderRepository) UpdateStatus(ctx context.Context, orderID string, newStatus models.OrderStatus, eventID string) error {
+	res := r.db.WithContext(ctx).Model(&models.Order{}).Where("order_id = ?", orderID).Update("status", newStatus)
+	if res.RowsAffected == 0 {
+		return errors.New("order not found")
+	}
+	return res.Error
+
+}
+func marshalPayload(order *models.Order) []byte {
+	payload, err := json.Marshal(struct {
+		OrderID    string             `json:"order_id"`
+		UserID     string             `json:"user_id"`
+		Status     models.OrderStatus `json:"status"`
+		TotalPrice float64            `json:"total_price"`
+	}{
+		OrderID:    order.OrderID,
+		UserID:     order.UserID,
+		Status:     order.Status,
+		TotalPrice: order.TotalPrice,
+	})
+	if err != nil {
+
+		return nil
+	}
+	return payload
+}

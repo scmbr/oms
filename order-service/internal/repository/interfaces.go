@@ -11,6 +11,7 @@ type OrderRepo interface {
 	Create(ctx context.Context, tx *gorm.DB, userID string, items []models.OrderItem) (*models.Order, error)
 	GetOrder(ctx context.Context, orderID string) (*models.Order, error)
 	ListOrders(ctx context.Context, userID string) ([]models.Order, error)
+	UpdateStatus(ctx context.Context, orderID string, newStatus models.OrderStatus, eventID string) error
 }
 type OutboxRepo interface {
 	Create(ctx context.Context, tx *gorm.DB, event *models.OutboxEvent) error
