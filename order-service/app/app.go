@@ -26,8 +26,10 @@ func Run() error {
 	logger.Init("order-service")
 	db, err := gorm.Open(postgres.Open(cfg.PostgresDSN), &gorm.Config{})
 	if err != nil {
+		logger.Error("database connection failed", err)
 		return err
 	}
+	logger.Info("database connected successfully")
 	rabbitCfg := rabbit.Config{
 		URL:      cfg.RabbitMQURL,
 		Exchange: "saga.events",
@@ -35,8 +37,10 @@ func Run() error {
 	}
 	conn, err := rabbit.NewConnection(rabbitCfg)
 	if err != nil {
+		logger.Error("rabbitmq connection failed", err)
 		return err
 	}
+	logger.Info("rabbitmq connected succesfully")
 	defer conn.Close()
 
 	publisher := rabbit.NewPublisher(conn, rabbitCfg.Exchange)
@@ -45,7 +49,7 @@ func Run() error {
 	orderSvc := service.NewServices(repos)
 
 	outboxWorker := worker.NewOutboxWorker(orderSvc.Outbox, publisher, 5*time.Second)
-
+	logger.Info("outbox worker is running")
 	go outboxWorker.Start(ctx)
 	handler := grpc_handler.NewOrderHandler(orderSvc.Order)
 
@@ -57,11 +61,12 @@ func Run() error {
 	if err != nil {
 		return err
 	}
+	logger.Info("consumer worker is running")
 	go consumer.Start(ctx)
 	grpcServer := grpc.NewServer()
 	pb.RegisterOrderServiceServer(grpcServer, handler)
 
-	logger.Info("OrderService gRPC server started", map[string]interface{}{
+	logger.Info("order-service gRPC server started", map[string]interface{}{
 		"port":     cfg.Port,
 		"protocol": "gRPC",
 		"service":  "order-service",

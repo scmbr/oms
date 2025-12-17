@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 
+	"github.com/scmbr/oms/common/logger"
 	"github.com/scmbr/oms/order-service/internal/dto"
 	"github.com/scmbr/oms/order-service/internal/models"
 	pb "github.com/scmbr/oms/order-service/internal/pb"
@@ -31,6 +32,12 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReque
 
 	orderDTO, err := h.orderService.CreateOrder(ctx, req.UserId, items)
 	if err != nil {
+		logger.Error("failed to create order", err, map[string]interface{}{
+			"user_id":     req.UserId,
+			"items":       items,
+			"item_count":  len(req.Items),
+			"grpc_method": "CreateOrder",
+		})
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
@@ -43,6 +50,10 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReque
 func (h *OrderHandler) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.GetOrderResponse, error) {
 	orderDTO, err := h.orderService.GetOrder(ctx, req.OrderId)
 	if err != nil {
+		logger.Error("failed to get order", err, map[string]interface{}{
+			"order_id":    req.OrderId,
+			"grpc_method": "GetOrder",
+		})
 		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
 
@@ -54,6 +65,10 @@ func (h *OrderHandler) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*
 func (h *OrderHandler) ListOrders(ctx context.Context, req *pb.ListOrdersRequest) (*pb.ListOrdersResponse, error) {
 	orderDTOs, err := h.orderService.ListOrders(ctx, req.UserId)
 	if err != nil {
+		logger.Error("failed to list orders", err, map[string]interface{}{
+			"user_id":     req.UserId,
+			"grpc_method": "ListOrders",
+		})
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
