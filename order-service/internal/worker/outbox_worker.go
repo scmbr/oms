@@ -18,12 +18,11 @@ type OutboxWorker struct {
 	txManager     tx.TxManager
 }
 
-func NewOutboxWorker(outboxService service.Outbox, publisher *rabbit.Publisher, interval time.Duration, txManager tx.TxManager) *OutboxWorker {
+func NewOutboxWorker(outboxService service.Outbox, publisher *rabbit.Publisher, interval time.Duration) *OutboxWorker {
 	return &OutboxWorker{
 		outboxService: outboxService,
 		publisher:     publisher,
 		interval:      interval,
-		txManager:     txManager,
 	}
 }
 
@@ -50,12 +49,12 @@ func (w *OutboxWorker) processPendingEvents(ctx context.Context) {
 	}
 
 	for _, event := range events {
-		if err := w.publisher.Publish(event.Payload, strconv.FormatUint(uint64(event.ID), 10)); err != nil {
+		if err := w.publisher.Publish(event.EventType, event.Payload, strconv.FormatUint(uint64(event.ID), 10)); err != nil {
 			log.Println("Failed to publish event", event.ID, err)
 			continue
 		}
 
-		if err := w.outboxService.MarkAsProcessed(ctx, w.txManager, strconv.FormatUint(uint64(event.ID), 10)); err != nil {
+		if err := w.outboxService.MarkAsProcessed(ctx, strconv.FormatUint(uint64(event.ID), 10)); err != nil {
 			log.Println("Failed to mark event as processed", event.ID, err)
 		}
 	}
