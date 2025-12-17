@@ -29,7 +29,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReque
 		})
 	}
 
-	orderDTO, err := h.orderService.CreateOrder(ctx, req.UserId, itemsToModels(items))
+	orderDTO, err := h.orderService.CreateOrder(ctx, req.UserId, items)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
