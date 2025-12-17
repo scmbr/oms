@@ -26,8 +26,9 @@ func (r *OutboxRepository) GetPending(ctx context.Context) ([]models.OutboxEvent
 	return events, nil
 }
 
-func (r *OutboxRepository) MarkAsSent(ctx context.Context, tx *gorm.DB, eventID string) error {
-	return tx.WithContext(ctx).
+func (r *OutboxRepository) MarkAsSent(ctx context.Context, eventID string) error {
+
+	return r.db.WithContext(ctx).
 		Model(&models.OutboxEvent{}).
 		Where("id = ?", eventID).
 		Updates(map[string]interface{}{

@@ -18,7 +18,7 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-func (r *OrderRepository) Create(ctx context.Context, tx *gorm.DB, userID string, items []models.OrderItem) (*models.Order, error) {
+func (r *OrderRepository) Create(ctx context.Context, userID string, items []dto.OrderItemDTO, total float64) (*models.Order, error) {
 	orderID := uuid.New().String()
 
 	var total float64
