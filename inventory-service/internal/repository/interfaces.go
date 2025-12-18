@@ -15,7 +15,7 @@ type Product interface {
 }
 type Stock interface {
 	Create(ctx context.Context, stock *models.Stock) (*models.Stock, error)
-	GetById(ctx context.Context, stockID string) (*models.Stock, error)
+	GetById(ctx context.Context, productID string) (*models.Stock, error)
 	GetAll(ctx context.Context) ([]models.Stock, error)
 	Delete(ctx context.Context, stockID string) (*models.Stock, error)
 	UpdateQuantity(ctx context.Context, productID string, delta int) (*models.Stock, error)
