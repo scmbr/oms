@@ -16,7 +16,11 @@ func NewStockRepository(db *gorm.DB) *StockRepository {
 
 }
 func (r *StockRepository) Create(ctx context.Context, stock *models.Stock) (*models.Stock, error) {
-	return nil, nil
+	if err := r.db.WithContext(ctx).Create(stock).Error; err != nil {
+		return nil, err
+	}
+
+	return stock, nil
 }
 func (r *StockRepository) GetById(ctx context.Context, stockID string) (*models.Stock, error) {
 	return nil, nil

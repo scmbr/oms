@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/scmbr/oms/inventory-service/internal/models"
 	"gorm.io/gorm"
 )
@@ -16,7 +18,15 @@ func NewReservationRepository(db *gorm.DB) *ReservationRepository {
 
 }
 func (r *ReservationRepository) Create(ctx context.Context, reservation *models.Reservation) (*models.Reservation, error) {
-	return nil, nil
+	reservationID := uuid.New().String()
+	reservation.ReservationID = reservationID
+	exp := time.Now().UTC().Add(time.Minute * 15)
+	reservation.ExpiredAt = &exp
+	if err := r.db.WithContext(ctx).Create(reservation).Error; err != nil {
+		return nil, err
+	}
+
+	return reservation, nil
 }
 func (r *ReservationRepository) GetById(ctx context.Context, reservationID string) (*models.Reservation, error) {
 	return nil, nil
