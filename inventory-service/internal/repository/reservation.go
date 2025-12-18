@@ -29,7 +29,11 @@ func (r *ReservationRepository) Create(ctx context.Context, reservation *models.
 	return reservation, nil
 }
 func (r *ReservationRepository) GetById(ctx context.Context, reservationID string) (*models.Reservation, error) {
-	return nil, nil
+	var reservation models.Reservation
+	if err := r.db.WithContext(ctx).Where("reservation_id = ?", reservationID).First(&reservation).Error; err != nil {
+		return nil, err
+	}
+	return &reservation, nil
 }
 func (r *ReservationRepository) GetAll(ctx context.Context) ([]models.Reservation, error) {
 	return nil, nil

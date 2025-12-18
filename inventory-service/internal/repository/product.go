@@ -25,7 +25,11 @@ func (r *ProductRepository) Create(ctx context.Context, product *models.Product)
 	return product, nil
 }
 func (r *ProductRepository) GetById(ctx context.Context, productID string) (*models.Product, error) {
-	return nil, nil
+	var product models.Product
+	if err := r.db.WithContext(ctx).Where("product_id = ?", productID).First(&product).Error; err != nil {
+		return nil, err
+	}
+	return &product, nil
 }
 func (r *ProductRepository) GetAll(ctx context.Context) ([]models.Product, error) {
 	return nil, nil

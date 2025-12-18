@@ -22,8 +22,12 @@ func (r *StockRepository) Create(ctx context.Context, stock *models.Stock) (*mod
 
 	return stock, nil
 }
-func (r *StockRepository) GetById(ctx context.Context, stockID string) (*models.Stock, error) {
-	return nil, nil
+func (r *StockRepository) GetById(ctx context.Context, productID string) (*models.Stock, error) {
+	var stock models.Stock
+	if err := r.db.WithContext(ctx).Where("product_id = ?", productID).First(&stock).Error; err != nil {
+		return nil, err
+	}
+	return &stock, nil
 }
 func (r *StockRepository) GetAll(ctx context.Context) ([]models.Stock, error) {
 	return nil, nil
