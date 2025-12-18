@@ -21,7 +21,7 @@ type Stock interface {
 	UpdateQuantity(ctx context.Context, productID string, delta int) (*models.Stock, error)
 }
 type Reservation interface {
-	Create(ctx context.Context, reservation *models.Reservation) (*models.Reservation, error)
+	Create(ctx context.Context, reservation *models.Reservation, externalID string) (*models.Reservation, error)
 	GetById(ctx context.Context, reservationID string) (*models.Reservation, error)
 	GetAll(ctx context.Context) ([]models.Reservation, error)
 	Delete(ctx context.Context, reservationID string) (*models.Reservation, error)
