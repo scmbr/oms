@@ -69,8 +69,15 @@ func (r *ReservationRepository) Delete(ctx context.Context, reservationID string
 	}
 	return nil
 }
-func (r *ReservationRepository) UpdateStatus(ctx context.Context, reservationID string, newStatus models.ReservationStatus) (*models.Reservation, error) {
-	return nil, nil
+func (r *ReservationRepository) UpdateStatus(ctx context.Context, reservationID string, newStatus models.ReservationStatus) error {
+	res := r.db.WithContext(ctx).Model(&models.Reservation{}).Where("reservation_id = ?", reservationID).Update("status", newStatus)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 func marshalPayload(reservation *models.Reservation) ([]byte, error) {
 	payload, err := json.Marshal(struct {

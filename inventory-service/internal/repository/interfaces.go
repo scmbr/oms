@@ -25,12 +25,17 @@ type Reservation interface {
 	GetById(ctx context.Context, reservationID string) (*models.Reservation, error)
 	GetAll(ctx context.Context) ([]models.Reservation, error)
 	Delete(ctx context.Context, reservationID string) error
-	UpdateStatus(ctx context.Context, reservationID string, newStatus models.ReservationStatus) (*models.Reservation, error)
+	UpdateStatus(ctx context.Context, reservationID string, newStatus models.ReservationStatus) error
+}
+type Outbox interface {
+	GetByStatus(ctx context.Context, status models.OutboxStatus) ([]models.OutboxEvent, error)
+	UpdateStatus(ctx context.Context, externalID string, newStatus models.OutboxStatus) error
 }
 type Repository struct {
 	product     Product
 	stock       Stock
 	reservation Reservation
+	outbox      Outbox
 }
 
 func NewRepository(db *gorm.DB) *Repository {
@@ -38,5 +43,6 @@ func NewRepository(db *gorm.DB) *Repository {
 		product:     NewProductRepository(db),
 		stock:       NewStockRepository(db),
 		reservation: NewReservationRepository(db),
+		outbox:      NewOutboxRepository(db),
 	}
 }
