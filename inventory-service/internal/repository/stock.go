@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/scmbr/oms/inventory-service/internal/models"
 	"gorm.io/gorm"
@@ -42,6 +43,30 @@ func (r *StockRepository) Delete(ctx context.Context, stockID string) error {
 	}
 	return nil
 }
-func (r *StockRepository) UpdateQuantity(ctx context.Context, productID string, delta int) (*models.Stock, error) {
-	return nil, nil
+func (r *StockRepository) UpdateQuantity(ctx context.Context, productID string, delta int) error {
+	if delta == 0 {
+		return nil
+	}
+
+	var res *gorm.DB
+	if delta > 0 {
+		res = r.db.WithContext(ctx).
+			Model(&models.Stock{}).
+			Where("product_id = ?", productID).
+			Update("available", gorm.Expr("available + ?", delta))
+	} else {
+		res = r.db.WithContext(ctx).
+			Model(&models.Stock{}).
+			Where("product_id = ? AND available >= ?", productID, uint(-delta)).
+			Update("available", gorm.Expr("available - ?", uint(-delta)))
+	}
+
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("product %s: not enough available stock or not found", productID)
+	}
+
+	return nil
 }
