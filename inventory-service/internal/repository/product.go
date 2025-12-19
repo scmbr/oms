@@ -32,7 +32,11 @@ func (r *ProductRepository) GetById(ctx context.Context, productID string) (*mod
 	return &product, nil
 }
 func (r *ProductRepository) GetAll(ctx context.Context) ([]models.Product, error) {
-	return nil, nil
+	var products []models.Product
+	if err := r.db.WithContext(ctx).Find(&products).Error; err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 func (r *ProductRepository) Delete(ctx context.Context, productID string) (*models.Product, error) {
 	return nil, nil

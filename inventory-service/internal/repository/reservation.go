@@ -57,7 +57,11 @@ func (r *ReservationRepository) GetById(ctx context.Context, reservationID strin
 	return &reservation, nil
 }
 func (r *ReservationRepository) GetAll(ctx context.Context) ([]models.Reservation, error) {
-	return nil, nil
+	var reservations []models.Reservation
+	if err := r.db.WithContext(ctx).Find(&reservations).Error; err != nil {
+		return nil, err
+	}
+	return reservations, nil
 }
 func (r *ReservationRepository) Delete(ctx context.Context, reservationID string) (*models.Reservation, error) {
 	return nil, nil

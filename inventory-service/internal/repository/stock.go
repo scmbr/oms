@@ -30,7 +30,11 @@ func (r *StockRepository) GetById(ctx context.Context, productID string) (*model
 	return &stock, nil
 }
 func (r *StockRepository) GetAll(ctx context.Context) ([]models.Stock, error) {
-	return nil, nil
+	var stock []models.Stock
+	if err := r.db.WithContext(ctx).Find(&stock).Error; err != nil {
+		return nil, err
+	}
+	return stock, nil
 }
 func (r *StockRepository) Delete(ctx context.Context, stockID string) (*models.Stock, error) {
 	return nil, nil
