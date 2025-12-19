@@ -32,17 +32,17 @@ type Outbox interface {
 	UpdateStatus(ctx context.Context, externalID string, newStatus models.OutboxStatus) error
 }
 type Repository struct {
-	product     Product
-	stock       Stock
-	reservation Reservation
-	outbox      Outbox
+	Product     Product
+	Stock       Stock
+	Reservation Reservation
+	Outbox      Outbox
 }
 
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
-		product:     NewProductRepository(db),
-		stock:       NewStockRepository(db),
-		reservation: NewReservationRepository(db),
-		outbox:      NewOutboxRepository(db),
+		Product:     NewProductRepository(db),
+		Stock:       NewStockRepository(db),
+		Reservation: NewReservationRepository(db),
+		Outbox:      NewOutboxRepository(db),
 	}
 }
