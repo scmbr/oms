@@ -63,8 +63,11 @@ func (r *ReservationRepository) GetAll(ctx context.Context) ([]models.Reservatio
 	}
 	return reservations, nil
 }
-func (r *ReservationRepository) Delete(ctx context.Context, reservationID string) (*models.Reservation, error) {
-	return nil, nil
+func (r *ReservationRepository) Delete(ctx context.Context, reservationID string) error {
+	if err := r.db.WithContext(ctx).Where("reservation_id = ?", reservationID).Delete(&models.Reservation{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 func (r *ReservationRepository) UpdateStatus(ctx context.Context, reservationID string, newStatus models.ReservationStatus) (*models.Reservation, error) {
 	return nil, nil

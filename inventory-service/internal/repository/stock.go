@@ -36,8 +36,11 @@ func (r *StockRepository) GetAll(ctx context.Context) ([]models.Stock, error) {
 	}
 	return stock, nil
 }
-func (r *StockRepository) Delete(ctx context.Context, stockID string) (*models.Stock, error) {
-	return nil, nil
+func (r *StockRepository) Delete(ctx context.Context, stockID string) error {
+	if err := r.db.WithContext(ctx).Where("stock_id = ?", stockID).Delete(&models.Reservation{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 func (r *StockRepository) UpdateQuantity(ctx context.Context, productID string, delta int) (*models.Stock, error) {
 	return nil, nil

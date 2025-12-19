@@ -38,6 +38,9 @@ func (r *ProductRepository) GetAll(ctx context.Context) ([]models.Product, error
 	}
 	return products, nil
 }
-func (r *ProductRepository) Delete(ctx context.Context, productID string) (*models.Product, error) {
-	return nil, nil
+func (r *ProductRepository) Delete(ctx context.Context, productID string) error {
+	if err := r.db.WithContext(ctx).Where("product_id = ?", productID).Delete(&models.Product{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
