@@ -18,35 +18,25 @@ func NewReservationRepository(db *gorm.DB) *ReservationRepository {
 	return &ReservationRepository{db: db}
 
 }
-func (r *ReservationRepository) Create(ctx context.Context, reservation *models.Reservation, externailID string) (*models.Reservation, error) {
-	reservationID := uuid.New().String()
-	reservation.ReservationID = reservationID
-	exp := time.Now().UTC().Add(time.Minute * 15)
-	reservation.ExpiredAt = &exp
-
-	tx := r.db.WithContext(ctx).Begin()
-	if err := tx.Create(reservation).Error; err != nil {
-		tx.Rollback()
-		return nil, err
+func (r *ReservationRepository) Create(ctxTx context.Context, reservation *models.Reservation, externailID string, payload []byte, eventType string) (*models.Reservation, error) {
+	tx, ok := ctxTx.Value(tx.TxKey()).(*gorm.DB)
+	if !ok {
+		tx = r.db
 	}
-	payload, err := marshalPayload(reservation)
-	if err != nil {
-		tx.Rollback()
+	if err := tx.Create(reservation).Error; err != nil {
 		return nil, err
 	}
 	outbox := models.OutboxEvent{
 		ExternalID:    externailID,
-		EventType:     "inventory.reserved",
-		AggregateID:   reservationID,
+		EventType:     models.EventTypeReserved,
+		AggregateID:   reservation.ReservationID,
 		AggregateType: "reservation",
 		Payload:       payload,
 		Status:        models.OutboxPending,
 	}
 	if err := tx.Create(outbox).Error; err != nil {
-		tx.Rollback()
 		return nil, err
 	}
-	tx.Commit()
 	return reservation, nil
 }
 func (r *ReservationRepository) GetById(ctx context.Context, reservationID string) (*models.Reservation, error) {
