@@ -11,6 +11,7 @@ type Product interface {
 	Create(ctx context.Context, product *models.Product) (*models.Product, error)
 	GetById(ctx context.Context, productID string) (*models.Product, error)
 	GetAll(ctx context.Context) ([]models.Product, error)
+	GetAllByIds(ctx context.Context, productIds []string) ([]models.Product, error)
 	Delete(ctx context.Context, productID string) error
 }
 type Stock interface {

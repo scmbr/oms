@@ -44,3 +44,13 @@ func (r *ProductRepository) Delete(ctx context.Context, productID string) error 
 	}
 	return nil
 }
+func (r *ProductRepository) GetAllByIds(ctx context.Context, productIds []string) ([]models.Product, error) {
+	if len(productIds) == 0 {
+		return []models.Product{}, nil
+	}
+	var products []models.Product
+	if err := r.db.WithContext(ctx).Where("product_id IN ?", productIds).Find(&products).Error; err != nil {
+		return nil, err
+	}
+	return products, nil
+}
