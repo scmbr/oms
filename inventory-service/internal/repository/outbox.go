@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"errors"
 
+	"github.com/scmbr/oms/common/tx"
 	"github.com/scmbr/oms/inventory-service/internal/models"
 	"gorm.io/gorm"
 )
@@ -21,8 +23,12 @@ func (r *OutboxRepository) GetByStatus(ctx context.Context, status models.Outbox
 	}
 	return outboxes, nil
 }
-func (r *OutboxRepository) UpdateStatus(ctx context.Context, externalID string, newStatus models.OutboxStatus) error {
-	res := r.db.WithContext(ctx).Model(&models.OutboxEvent{}).Where("external_id = ?", externalID).Update("status", newStatus)
+func (r *OutboxRepository) UpdateStatus(ctxTx context.Context, externalID string, newStatus models.OutboxStatus) error {
+	tx, ok := ctxTx.Value(tx.TxKey()).(*gorm.DB)
+	if !ok {
+		tx = r.db
+	}
+	res := tx.Model(&models.OutboxEvent{}).Where("external_id = ?", externalID).Update("status", newStatus)
 	if res.Error != nil {
 		return res.Error
 	}
