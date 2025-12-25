@@ -5,7 +5,6 @@ import "time"
 type ReservationStatus string
 
 const (
-	ReservationPending   ReservationStatus = "PENDING"
 	ReservationReserved  ReservationStatus = "RESERVED"
 	ReservationFailed    ReservationStatus = "FAILED"
 	ReservationCancelled ReservationStatus = "CANCELLED"
