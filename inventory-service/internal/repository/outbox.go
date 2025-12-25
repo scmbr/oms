@@ -31,3 +31,13 @@ func (r *OutboxRepository) UpdateStatus(ctx context.Context, externalID string, 
 	}
 	return nil
 }
+func (r *OutboxRepository) GetByExtID(ctx context.Context, externalID string) (*models.OutboxEvent, error) {
+	var outbox models.OutboxEvent
+	if err := r.db.WithContext(ctx).Where("external_id = ?", externalID).First(&outbox).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &outbox, nil
+}

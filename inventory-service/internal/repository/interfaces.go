@@ -29,6 +29,7 @@ type Reservation interface {
 	UpdateStatus(ctx context.Context, reservationID string, newStatus models.ReservationStatus) error
 }
 type Outbox interface {
+	GetByExtID(ctx context.Context, externalID string) (*models.OutboxEvent, error)
 	GetByStatus(ctx context.Context, status models.OutboxStatus) ([]models.OutboxEvent, error)
 	UpdateStatus(ctx context.Context, externalID string, newStatus models.OutboxStatus) error
 }
