@@ -2,10 +2,8 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/scmbr/oms/common/tx"
 	"github.com/scmbr/oms/inventory-service/internal/models"
 	"gorm.io/gorm"
 )
@@ -68,28 +66,4 @@ func (r *ReservationRepository) UpdateStatus(ctx context.Context, reservationID 
 		return gorm.ErrRecordNotFound
 	}
 	return nil
-}
-func marshalPayload(reservation *models.Reservation) ([]byte, error) {
-	payload, err := json.Marshal(struct {
-		ReservationID string                   `json:"reservation_id"`
-		OrderID       string                   `json:"order_id"`
-		ProductID     string                   `json:"product_id"`
-		Quantity      uint                     `json:"quantity"`
-		Status        models.ReservationStatus `json:"status"`
-		CreatedAt     time.Time                `json:"created_at"`
-		ExpiredAt     *time.Time               `json:"expired_at"`
-	}{
-		ReservationID: reservation.ReservationID,
-		OrderID:       reservation.OrderID,
-		ProductID:     reservation.ProductID,
-		Quantity:      reservation.Quantity,
-		Status:        reservation.Status,
-		CreatedAt:     reservation.CreatedAt,
-		ExpiredAt:     reservation.ExpiredAt,
-	})
-	if err != nil {
-
-		return nil, nil
-	}
-	return payload, err
 }
